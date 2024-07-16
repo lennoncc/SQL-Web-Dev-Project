@@ -17,7 +17,8 @@ import 'ag-grid-community/styles/ag-theme-quartz.css';
     [rowData]="rowData"
     [columnDefs]="colDefs"
     class="ag-theme-quartz"
-    style="height: 500px;" />
+    style="height: 200px; width: 900px"
+  />
   `,
 })
 export class AggridComponent {
