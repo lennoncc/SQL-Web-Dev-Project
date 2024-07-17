@@ -25,4 +25,23 @@ router.get("/allSalespersons", async (req, res) => {
   }
 });
 
+router.patch("/updateaddress", async (req, res) => {
+  console.log(req.body)
+  const query = `UPDATE AdventureWorks2019.Sales.vSalesPerson SET AddressLine1 = '${req.body.data.AddressLine1}' WHERE BusinessEntityID = ${req.body.data.BusinessEntityID}`
+  const values = [];
+  const paramNames = [];
+  const isStoredProcedure = false;
+  console.log('patch requested')
+  console.log(req.body)
+  console.log(`query is ${query}`)
+  try {
+    const result = await executeQuery(query, values, paramNames, isStoredProcedure);
+    // res.send()
+  } catch (error) {
+    console.error(error);
+    res.status(500).send(error);
+  }
+
+});
+
 module.exports = { router };
