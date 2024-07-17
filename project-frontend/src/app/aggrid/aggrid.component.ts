@@ -48,9 +48,11 @@ interface IRow {
     (gridReady)="onGridReady($event)"
     (cellValueChanged)="OnCellValueChanged($event)"
   />
-  <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" (click)="onSubmit()">
-    Submit
-  </button>
+  <div *ngIf = "anyChanges">
+    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" (click)="onSubmit()">
+      Submit
+    </button>
+  </div>
   <div *ngIf = "noAddresses">
     <p>No Addresses to submit!</p>
   </div>
@@ -59,6 +61,7 @@ interface IRow {
 })
 export class AggridComponent {
   noAddresses = false;
+  anyChanges = false;
   addresses = new Map();
   // Load Data onto grid when ready
   constructor(private http: HttpClient) {}
@@ -101,6 +104,7 @@ export class AggridComponent {
 
   OnCellValueChanged(event: CellValueChangedEvent) {
     console.log("Cell Value Changed: ", event.data)
+    this.anyChanges = true
     // When cell value changes, store in dictionary with following structure:
     // BusinessEntityID : changed data
     this.addresses.set(event.data.BusinessEntityID, event.data)
@@ -113,6 +117,7 @@ export class AggridComponent {
       this.noAddresses = true;
     } else {
       this.noAddresses = false;
+      this.anyChanges = false;
       for (const [key, value] of this.addresses.entries()) {
         this.http
         .patch(`http://localhost:3333/api/updateaddress/${key}`, 
