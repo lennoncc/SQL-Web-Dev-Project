@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
-import { ColDef, GridReadyEvent } from 'ag-grid-community';
+import { ColDef, GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
+import { NgIf } from '@angular/common';
 
 // Row Data Interface
 interface IRow {
@@ -34,7 +35,7 @@ interface IRow {
 @Component({
   selector: 'app-aggrid',
   standalone: true,
-  imports: [AgGridAngular],
+  imports: [AgGridAngular, NgIf],
   // templateUrl: './aggrid.component.html',
   // styleUrl: './aggrid.component.css',
   template: `
@@ -45,10 +46,23 @@ interface IRow {
     [columnDefs]="colDefs"
     class="ag-theme-quartz"
     (gridReady)="onGridReady($event)"
+    (cellValueChanged)="OnCellValueChanged($event)"
   />
+  <div *ngIf = "anyChanges">
+    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" (click)="onSubmit()">
+      Submit
+    </button>
+  </div>
+  <div *ngIf = "noAddresses">
+    <p>No Addresses to submit!</p>
+  </div>
   `,
+  
 })
 export class AggridComponent {
+  noAddresses = false;
+  anyChanges = false;
+  addresses = new Map();
   // Load Data onto grid when ready
   constructor(private http: HttpClient) {}
   onGridReady(params: GridReadyEvent) {
@@ -71,8 +85,12 @@ export class AggridComponent {
     { field: "PhoneNumberType" },
     { field: "EmailAddress" },
     { field: "EmailPromotion" },
-    { field: "AddressLine1" },
-    { field: "AddressLine2" },
+    { field: "AddressLine1",
+      editable: true
+     },
+    { field: "AddressLine2",
+      editable: true
+     },
     { field: "City" },
     { field: "StateProvinceName" },
     { field: "PostalCode" },
@@ -83,4 +101,45 @@ export class AggridComponent {
     { field: "SalesYTD" },
     { field: "SalesLastYear" },
   ];
+
+  OnCellValueChanged(event: CellValueChangedEvent) {
+    console.log("Cell Value Changed: ", event.data)
+    this.anyChanges = true
+    // When cell value changes, store in dictionary with following structure:
+    // BusinessEntityID : changed data
+    this.addresses.set(event.data.BusinessEntityID, event.data)
+  }
+  // Functionality for submit button, loops through map and sends patch request for all cells changed
+  onSubmit() {
+    console.log("Button pressed!");
+    if (this.addresses.size == 0) {
+      console.log("Nothing to change!");
+      this.noAddresses = true;
+    } else {
+      this.noAddresses = false;
+      this.anyChanges = false;
+      for (const [key, value] of this.addresses.entries()) {
+        this.http
+        .patch(`http://localhost:3333/api/updateaddress/${key}`, 
+          {
+            "data" : value,
+          })
+          .subscribe(
+            (val) => {
+              console.log("PATCH call successful value returned in body", 
+                val);
+            },
+            response => {
+              console.log("PATCH call in error", response);
+            },
+            () => {
+              console.log("The PATCH observable is now completed.");
+            });
+      }
+    }
+
+    
+  }
+  
+
 }
