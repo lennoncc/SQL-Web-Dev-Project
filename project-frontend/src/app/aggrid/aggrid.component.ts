@@ -4,6 +4,7 @@ import { ColDef, GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
+import { NgIf } from '@angular/common';
 
 // Row Data Interface
 interface IRow {
@@ -34,7 +35,7 @@ interface IRow {
 @Component({
   selector: 'app-aggrid',
   standalone: true,
-  imports: [AgGridAngular],
+  imports: [AgGridAngular, NgIf],
   // templateUrl: './aggrid.component.html',
   // styleUrl: './aggrid.component.css',
   template: `
@@ -50,10 +51,14 @@ interface IRow {
   <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" (click)="onSubmit()">
     Submit
   </button>
+  <div *ngIf = "noAddresses">
+    <p>No Addresses to submit!</p>
+  </div>
   `,
   
 })
 export class AggridComponent {
+  noAddresses = false;
   addresses = new Map();
   // Load Data onto grid when ready
   constructor(private http: HttpClient) {}
@@ -102,25 +107,33 @@ export class AggridComponent {
   }
   // Functionality for submit button, loops through map and sends patch request for all cells changed
   onSubmit() {
-    console.log("Button pressed!")
-    for (const [key, value] of this.addresses.entries()) {
-      this.http
-      .patch(`http://localhost:3333/api/updateaddress/${key}`, 
-        {
-          "data" : value,
-        })
-        .subscribe(
-          (val) => {
-            console.log("PATCH call successful value returned in body", 
-              val);
-          },
-          response => {
-            console.log("PATCH call in error", response);
-          },
-          () => {
-            console.log("The PATCH observable is now completed.");
-          });
+    console.log("Button pressed!");
+    if (this.addresses.size == 0) {
+      console.log("Nothing to change!");
+      this.noAddresses = true;
+    } else {
+      this.noAddresses = false;
+      for (const [key, value] of this.addresses.entries()) {
+        this.http
+        .patch(`http://localhost:3333/api/updateaddress/${key}`, 
+          {
+            "data" : value,
+          })
+          .subscribe(
+            (val) => {
+              console.log("PATCH call successful value returned in body", 
+                val);
+            },
+            response => {
+              console.log("PATCH call in error", response);
+            },
+            () => {
+              console.log("The PATCH observable is now completed.");
+            });
+      }
     }
+
+    
   }
   
 
