@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
-import { ColDef, GridReadyEvent } from 'ag-grid-community';
+import { ColDef, GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
@@ -45,6 +45,7 @@ interface IRow {
     [columnDefs]="colDefs"
     class="ag-theme-quartz"
     (gridReady)="onGridReady($event)"
+    (cellValueChanged)="OnCellValueChanged($event)"
   />
   `,
 })
@@ -87,4 +88,23 @@ export class AggridComponent {
     { field: "SalesYTD" },
     { field: "SalesLastYear" },
   ];
+  OnCellValueChanged(event: CellValueChangedEvent) {
+    console.log("Data after change: ", event.data)
+    this.http
+    .patch('http://localhost:3333/api/updateaddress', 
+      {
+        "data" : event.data,
+      })
+      .subscribe(
+        (val) => {
+          console.log("PATCH call successful value returned in body", 
+            val);
+        },
+        response => {
+          console.log("PATCH call in error", response);
+        },
+        () => {
+          console.log("The PATCH observable is now completed.");
+        });
+  }
 }
