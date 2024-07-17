@@ -47,9 +47,14 @@ interface IRow {
     (gridReady)="onGridReady($event)"
     (cellValueChanged)="OnCellValueChanged($event)"
   />
+  <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" (click)="onSubmit()">
+    Submit
+  </button>
   `,
+  
 })
 export class AggridComponent {
+  addresses = new Map();
   // Load Data onto grid when ready
   constructor(private http: HttpClient) {}
   onGridReady(params: GridReadyEvent) {
@@ -88,23 +93,35 @@ export class AggridComponent {
     { field: "SalesYTD" },
     { field: "SalesLastYear" },
   ];
+
   OnCellValueChanged(event: CellValueChangedEvent) {
-    console.log("Data after change: ", event.data)
-    this.http
-    .patch('http://localhost:3333/api/updateaddress', 
-      {
-        "data" : event.data,
-      })
-      .subscribe(
-        (val) => {
-          console.log("PATCH call successful value returned in body", 
-            val);
-        },
-        response => {
-          console.log("PATCH call in error", response);
-        },
-        () => {
-          console.log("The PATCH observable is now completed.");
-        });
+    console.log("Cell Value Changed: ", event.data)
+    // When cell value changes, store in dictionary with following structure:
+    // BusinessEntityID : changed data
+    this.addresses.set(event.data.BusinessEntityID, event.data)
   }
+  // Functionality for submit button, loops through map and sends patch request for all cells changed
+  onSubmit() {
+    console.log("Button pressed!")
+    for (const [key, value] of this.addresses.entries()) {
+      this.http
+      .patch(`http://localhost:3333/api/updateaddress/${key}`, 
+        {
+          "data" : value,
+        })
+        .subscribe(
+          (val) => {
+            console.log("PATCH call successful value returned in body", 
+              val);
+          },
+          response => {
+            console.log("PATCH call in error", response);
+          },
+          () => {
+            console.log("The PATCH observable is now completed.");
+          });
+    }
+  }
+  
+
 }
