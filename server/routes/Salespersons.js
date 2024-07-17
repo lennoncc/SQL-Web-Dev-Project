@@ -28,9 +28,9 @@ router.get("/allSalespersons", async (req, res) => {
 router.patch("/updateaddress/:id", async (req, res) => {
   const id = req.params.id
   console.log(`id from params is ${id}`)
-  const query = `UPDATE AdventureWorks2019.Sales.vSalesPerson SET AddressLine1 = '${req.body.data.AddressLine1}' WHERE BusinessEntityID = ${id}`
-  const values = [];
-  const paramNames = [];
+  const query = `UPDATE AdventureWorks2019.Sales.vSalesPerson SET AddressLine1 = @address WHERE BusinessEntityID = @id`
+  const values = [req.body.data.AddressLine1, id];
+  const paramNames = ['address', 'id'];
   const isStoredProcedure = false;
   console.log('patch requested')
   console.log(req.body)
