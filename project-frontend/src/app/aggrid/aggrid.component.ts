@@ -71,8 +71,12 @@ export class AggridComponent {
     { field: "PhoneNumberType" },
     { field: "EmailAddress" },
     { field: "EmailPromotion" },
-    { field: "AddressLine1" },
-    { field: "AddressLine2" },
+    { field: "AddressLine1",
+      editable: true
+     },
+    { field: "AddressLine2",
+      editable: true
+     },
     { field: "City" },
     { field: "StateProvinceName" },
     { field: "PostalCode" },
