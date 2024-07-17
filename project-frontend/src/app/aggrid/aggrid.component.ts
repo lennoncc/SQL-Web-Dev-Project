@@ -1,9 +1,35 @@
 import { Component } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
-import { ColDef } from 'ag-grid-community';
+import { ColDef, GridReadyEvent } from 'ag-grid-community';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
 
+// Row Data Interface
+interface IRow {
+  BusinessEntityID: number;
+  Title: string;
+  FirstName: string;
+  MiddleName: string;
+  LastName: string;
+  Suffix: string;
+  JobTitle: string;
+  PhoneNumber: number;
+  PhoneNumberType: string;
+  EmailAddress: string;
+  EmailPromotion: number;
+  AddressLine1: string;
+  AddressLine2: string;
+  City: string;
+  StateProvinceName: string;
+  PostalCode: string;
+  CountryRegionName: string;
+  TerritoryName: string;
+  TerritoryGroup: string;
+  SalesQuota: number;
+  SalesYTD: number;
+  SalesLastYear: number;
+}
 
 @Component({
   selector: 'app-aggrid',
@@ -14,25 +40,47 @@ import 'ag-grid-community/styles/ag-theme-quartz.css';
   template: `
   <!-- The AG Grid component -->
   <ag-grid-angular
+    style="height: 600px; width: 100%"
     [rowData]="rowData"
     [columnDefs]="colDefs"
     class="ag-theme-quartz"
-    style="height: 200px; width: 900px"
+    (gridReady)="onGridReady($event)"
   />
   `,
 })
 export class AggridComponent {
+  // Load Data onto grid when ready
+  constructor(private http: HttpClient) {}
+  onGridReady(params: GridReadyEvent) {
+    this.http
+    .get<any[]>('http://localhost:3333/api/allSalespersons')
+    .subscribe(data => this.rowData = data);
+  }
   // Row Data: Data to be displayed
-  rowData = [
-    { make: "Toyota", model: "GR Corolla", price: 45000, electric: false},
-    { make: "Honda", model: "Prelude", price: 40000, electric: true},
-    { make: "Nissan", model: "GTR", price: 100000, electric: false}
-  ];
+  rowData: IRow[] = [];
   // Column Definitions: Defines columns to be displayed
   colDefs: ColDef[] = [
-    { field: "make" },
-    { field: "model" },
-    { field: "price" },
-    { field: "electric" },
+    { field: "BusinessEntityID" },
+    { field: "Title" },
+    { field: "FirstName" },
+    { field: "MiddleName" },
+    { field: "LastName" },
+    { field: "Suffix" },
+    { field: "JobTitle" },
+    { field: "PhoneNumber" },
+    { field: "PhoneNumberType" },
+    { field: "EmailAddress" },
+    { field: "EmailPromotion" },
+    { field: "AddressLine1" },
+    { field: "AddressLine2" },
+    { field: "City" },
+    { field: "StateProvinceName" },
+    { field: "PostalCode" },
+    { field: "CountryRegionName" },
+    { field: "TerritoryName" },
+    { field: "TerritoryGroup" },
+    { field: "SalesQuota" },
+    { field: "SalesYTD" },
+    { field: "SalesLastYear" },
   ];
 }
