@@ -1,0 +1,19 @@
+<ol>
+  <li>
+    <label id="dialog-user-name">What's your name?</label>
+    <input for="dialog-user-name" [(ngModel)]="name">
+  </li>
+  <li>
+    <button (click)="openDialog()">Pick one</button>
+  </li>
+  @if (animal) {
+    <li>
+      You chose: <em>{{animal}}</em>
+    </li>
+  }
+</ol>
+
+
+<!-- Copyright 2024 Google LLC. All Rights Reserved.
+    Use of this source code is governed by an MIT-style license that
+    can be found in the LICENSE file at https://angular.io/license -->

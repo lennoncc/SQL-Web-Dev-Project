@@ -6,11 +6,12 @@ import { SalespersonsComponent } from './salespersons/salespersons.component';
 import { AggridComponent } from './aggrid/aggrid.component';
 import { ApiService } from './api.service';
 import { CommonModule } from '@angular/common';
+import { CdkDialogOverviewExample } from './aggrid/aggrid.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, SalespersonsComponent, AggridComponent, CommonModule],
+  imports: [RouterOutlet, HeaderComponent, SalespersonsComponent, AggridComponent, CommonModule, CdkDialogOverviewExample],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
