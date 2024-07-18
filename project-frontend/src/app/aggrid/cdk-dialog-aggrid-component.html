@@ -1,4 +1,4 @@
-<p>BusinessEntityID: {{data.BusinessEntityID}}</p>
+<!-- <p>BusinessEntityID: {{data.BusinessEntityID}}</p>
 <p>Title: {{data.Title}}</p>
 <p>FirstName: {{data.FirstName}}</p>
 <p>MiddleName: {{data.MiddleName}}</p>
@@ -19,4 +19,14 @@
 <p>TerritoryGroup: {{data.TerritoryGroup}}</p>
 <p>SalesQuota: {{data.SalesQuota}}</p>
 <p>SalesYTD: {{data.SalesYTD}}</p>
-<p>SalesLastYear: {{data.SalesLastYear}}</p>
+<p>SalesLastYear: {{data.SalesLastYear}}</p> -->
+<ag-grid-angular
+    style="height: 110px; width: 100%"
+    [rowData]="rowData"
+    [columnDefs]="colDefs"
+    class="ag-theme-quartz"
+    (cellValueChanged)="OnCellValueChanged($event)"
+/>
+<button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded flex flex-col items-center" (click)="onSubmit()">
+  Submit
+</button>

@@ -90,12 +90,8 @@ export class AggridComponent {
     { field: "PhoneNumberType" },
     { field: "EmailAddress" },
     { field: "EmailPromotion" },
-    { field: "AddressLine1",
-      editable: true
-     },
-    { field: "AddressLine2",
-      editable: true
-     },
+    { field: "AddressLine1" },
+    { field: "AddressLine2" },
     { field: "City" },
     { field: "StateProvinceName" },
     { field: "PostalCode" },
@@ -118,8 +114,9 @@ export class AggridComponent {
   onCellDoubleClicked(event: CellDoubleClickedEvent) {
     console.log("clicked on", event.data)
     const dialogRef = this.dialog.open<string>(CdkDialogAggridComponent, {
-      width: '600px',
+      width: '85%',
       data: {
+        everything: event.data,
         BusinessEntityID: event.data.BusinessEntityID,
         Title: event.data.Title,
         FirstName: event.data.FirstName,
@@ -146,6 +143,7 @@ export class AggridComponent {
     });
     dialogRef.closed.subscribe(result => {
       console.log('The dialog was closed');
+      console.log(result)
     });
   }
 
@@ -188,60 +186,71 @@ export class AggridComponent {
 @Component({
   selector: 'cdk-dialog-aggrid-component',
   templateUrl: 'cdk-dialog-aggrid-component.html',
-  styleUrl: 'cdk-dialog-overview-example-dialog.css',
+  styleUrl: 'cdk-dialog-aggrid-component.css',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, AgGridAngular],
 })
 export class CdkDialogAggridComponent {
   constructor(
     public dialogRef: DialogRef<string>,
     @Inject(DIALOG_DATA) public data: IRow,
+    private http: HttpClient
   ) {}
-}
-
-export interface DialogData {
-  animal: string;
-  name: string;
-}
-
-/**
- * @title CDK Dialog Overview
- */
-@Component({
-  selector: 'cdk-dialog-overview-example',
-  templateUrl: 'cdk-dialog-overview-example.html',
-  standalone: true,
-  imports: [FormsModule, DialogModule],
-})
-export class CdkDialogOverviewExample {
-  animal: string | undefined;
-  name: string | undefined;
-
-  constructor(public dialog: Dialog) {}
-
-  openDialog(): void {
-    const dialogRef = this.dialog.open<string>(CdkDialogOverviewExampleDialog, {
-      width: '250px',
-      data: {name: this.name, animal: this.animal},
-    });
-
-    dialogRef.closed.subscribe(result => {
-      console.log('The dialog was closed');
-      this.animal = result;
-    });
+  newAddress = new Map();
+  // Row Data: Data to be displayed
+  rowData: IRow[] = [this.data];
+  // Column Definitions: Defines columns to be displayed
+  colDefs: ColDef[] = [
+    { field: "BusinessEntityID" },
+    { field: "Title" },
+    { field: "FirstName" },
+    { field: "MiddleName" },
+    { field: "LastName" },
+    { field: "Suffix" },
+    { field: "JobTitle" },
+    { field: "PhoneNumber" },
+    { field: "PhoneNumberType" },
+    { field: "EmailAddress" },
+    { field: "EmailPromotion" },
+    { field: "AddressLine1",
+      editable: true
+     },
+    { field: "AddressLine2",
+      editable: true
+     },
+    { field: "City" },
+    { field: "StateProvinceName" },
+    { field: "PostalCode" },
+    { field: "CountryRegionName" },
+    { field: "TerritoryName" },
+    { field: "TerritoryGroup" },
+    { field: "SalesQuota" },
+    { field: "SalesYTD" },
+    { field: "SalesLastYear" },
+  ];
+  onSubmit() {
+    console.log("Button pressed!");
+    for (const [key, value] of this.newAddress.entries()) {
+      this.http
+      .patch(`http://localhost:3333/api/updateaddress/${key}`, 
+        {
+          "data" : value,
+        })
+        .subscribe(
+          (val) => {
+            console.log("PATCH call successful value returned in body", 
+              val);
+          },
+          response => {
+            console.log("PATCH call in error", response);
+          },
+          () => {
+            console.log("The PATCH observable is now completed.");
+          });
+    }
   }
-}
-
-@Component({
-  selector: 'cdk-dialog-overview-example-dialog',
-  templateUrl: 'cdk-dialog-overview-example-dialog.html',
-  styleUrl: 'cdk-dialog-overview-example-dialog.css',
-  standalone: true,
-  imports: [FormsModule],
-})
-export class CdkDialogOverviewExampleDialog {
-  constructor(
-    public dialogRef: DialogRef<string>,
-    @Inject(DIALOG_DATA) public data: DialogData,
-  ) {}
+  OnCellValueChanged(event: CellValueChangedEvent) {
+    console.log("Cell Value Changed: ", event.data)
+    this.newAddress.set(event.data.BusinessEntityID, event.data)
+  }
 }
