@@ -1,6 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { AgGridAngular } from 'ag-grid-angular';
-import { ColDef, GridReadyEvent, CellValueChangedEvent, CellDoubleClickedEvent } from 'ag-grid-community';
+import { ColDef, GridReadyEvent, CellValueChangedEvent, CellDoubleClickedEvent, GridApi, GetRowIdFunc, GetRowIdParams } from 'ag-grid-community';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-quartz.css';
@@ -47,24 +47,17 @@ interface IRow {
     style="height: 600px; width: 100%"
     [rowData]="rowData"
     [columnDefs]="colDefs"
+    [getRowId]="getRowId"
     class="ag-theme-quartz"
     (gridReady)="onGridReady($event)"
     (cellValueChanged)="OnCellValueChanged($event)"
     (cellDoubleClicked)="onCellDoubleClicked($event)"
   />
-  <div *ngIf = "anyChanges">
-    <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" (click)="onSubmit()">
-      Submit
-    </button>
-  </div>
-  <div *ngIf = "noAddresses">
-    <p>No Addresses to submit!</p>
-  </div>
   `,
   
 })
 export class AggridComponent {
-
+  private gridApi!:GridApi;
   noAddresses = false;
   anyChanges = false;
   addresses = new Map();
@@ -74,6 +67,7 @@ export class AggridComponent {
     this.http
     .get<any[]>('http://localhost:3333/api/allSalespersons')
     .subscribe(data => this.rowData = data);
+    this.gridApi = params.api;
   }
   // Row Data: Data to be displayed
   rowData: IRow[] = [];
@@ -103,6 +97,12 @@ export class AggridComponent {
     { field: "SalesLastYear" },
   ];
 
+  // Assign RowId to BusinessEntityID
+  public getRowId: GetRowIdFunc = (params: GetRowIdParams) =>
+    String(params.data.BusinessEntityID);
+
+  
+
   OnCellValueChanged(event: CellValueChangedEvent) {
     console.log("Cell Value Changed: ", event.data)
     this.anyChanges = true
@@ -111,10 +111,14 @@ export class AggridComponent {
     this.addresses.set(event.data.BusinessEntityID, event.data)
   }
 
+  // When Cell is double clicked, open up dialog  box from CdkDialogAggridComponent.
   onCellDoubleClicked(event: CellDoubleClickedEvent) {
     console.log("clicked on", event.data)
-    const dialogRef = this.dialog.open<string>(CdkDialogAggridComponent, {
+    console.log("rowdata is", this.rowData)
+    // Create dialog box according to constructor, which follows IRow interface
+    const dialogRef = this.dialog.open<any>(CdkDialogAggridComponent, {
       width: '85%',
+      // Store all data from event that was clicked following IRow interface
       data: {
         everything: event.data,
         BusinessEntityID: event.data.BusinessEntityID,
@@ -141,45 +145,20 @@ export class AggridComponent {
         SalesLastYear: event.data.SalesLastYear,
       },
     });
+    // Upon closing, get changed value map and update data on page accordingly
     dialogRef.closed.subscribe(result => {
       console.log('The dialog was closed');
       console.log(result)
+      for (const [key, value] of result) {
+        console.log(`key is ${key}, value is ${value}`)
+        const rowNode = this.gridApi.getRowNode(key);
+        console.log(`got rowNode: ${rowNode}`)
+        rowNode?.updateData(value);
+      }
     });
   }
 
-  // Functionality for submit button, loops through map and sends patch request for all cells changed
-  onSubmit() {
-    console.log("Button pressed!");
-    if (this.addresses.size == 0) {
-      console.log("Nothing to change!");
-      this.noAddresses = true;
-    } else {
-      this.noAddresses = false;
-      this.anyChanges = false;
-      for (const [key, value] of this.addresses.entries()) {
-        this.http
-        .patch(`http://localhost:3333/api/updateaddress/${key}`, 
-          {
-            "data" : value,
-          })
-          .subscribe(
-            (val) => {
-              console.log("PATCH call successful value returned in body", 
-                val);
-            },
-            response => {
-              console.log("PATCH call in error", response);
-            },
-            () => {
-              console.log("The PATCH observable is now completed.");
-            });
-      }
-    }
-
-    
-  }
   
-
 }
 
 
@@ -188,15 +167,20 @@ export class AggridComponent {
   templateUrl: 'cdk-dialog-aggrid-component.html',
   styleUrl: 'cdk-dialog-aggrid-component.css',
   standalone: true,
-  imports: [FormsModule, AgGridAngular],
+  imports: [FormsModule, AgGridAngular, NgIf],
 })
+// Create CdkDialogAggridComponent for dialog box
 export class CdkDialogAggridComponent {
+  // Constructor takes in data in format interface IRow, injects accordingly
   constructor(
-    public dialogRef: DialogRef<string>,
+    public dialogRef: DialogRef<any>,
     @Inject(DIALOG_DATA) public data: IRow,
     private http: HttpClient
   ) {}
+  // Map holds new data with key being BusinessEntityID and value being the entire object updated
   newAddress = new Map();
+  // Boolean to show/hide submit button
+  anyChanges = false;
   // Row Data: Data to be displayed
   rowData: IRow[] = [this.data];
   // Column Definitions: Defines columns to be displayed
@@ -212,6 +196,7 @@ export class CdkDialogAggridComponent {
     { field: "PhoneNumberType" },
     { field: "EmailAddress" },
     { field: "EmailPromotion" },
+    // Address lines to be only ones editable, rest read only
     { field: "AddressLine1",
       editable: true
      },
@@ -228,6 +213,7 @@ export class CdkDialogAggridComponent {
     { field: "SalesYTD" },
     { field: "SalesLastYear" },
   ];
+  // Functionality for submit button, loops through map and sends patch request for all cells changed
   onSubmit() {
     console.log("Button pressed!");
     for (const [key, value] of this.newAddress.entries()) {
@@ -248,8 +234,14 @@ export class CdkDialogAggridComponent {
             console.log("The PATCH observable is now completed.");
           });
     }
+    // Upon hitting submit, closes dialog box and sends back data that was changed
+    this.dialogRef.close(this.newAddress)
   }
+
+  // Upon editing any cell value, store in map according to BusinessEntityID as key
+  // Also set flag to show submit button with anyChanges
   OnCellValueChanged(event: CellValueChangedEvent) {
+    this.anyChanges = true
     console.log("Cell Value Changed: ", event.data)
     this.newAddress.set(event.data.BusinessEntityID, event.data)
   }
